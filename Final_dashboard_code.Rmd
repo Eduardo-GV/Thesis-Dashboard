@@ -1,0 +1,323 @@
+---
+title: "Measuring Risk for Atrial Fibrillation: Is CHARGE-AF the Key Indicator?"
+author: "Eduardo Gonzalez"
+date: "2026-04-21"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(plotly)
+library(dplyr)
+library(tidyr)
+
+```
+
+# Interactive Visualizations 
+
+Column 
+-----------------------------
+
+**How well does CHARGE-AF perform in predicting atrial fibrillation (AF) over 20 years of follow up?**
+
+```{r Creating dataset for Figure 1}
+
+# Create dataset with the calibration info for all models (using log-transformed CHARGE-AF as input)
+
+calib_all <- tribble(
+  ~group, ~model, ~decile, ~mphat, ~km,
+
+  # Model 1
+  "log","Model1",1,0.1257503,0.10470,
+  "log","Model1",2,0.1810070,0.20919,
+  "log","Model1",3,0.2280117,0.21534,
+  "log","Model1",4,0.2768025,0.29905,
+  "log","Model1",5,0.3305939,0.33441,
+  "log","Model1",6,0.3912649,0.36313,
+  "log","Model1",7,0.4605514,0.50416,
+  "log","Model1",8,0.5415850,0.52166,
+  "log","Model1",9,0.6464542,0.63489,
+  "log","Model1",10,0.8171456,0.77738,
+
+  # Model 2
+  "log","Model2",1,0.1247103,0.10311,
+  "log","Model2",2,0.1798741,0.22060,
+  "log","Model2",3,0.2272660,0.21146,
+  "log","Model2",4,0.2753372,0.28595,
+  "log","Model2",5,0.3306681,0.30613,
+  "log","Model2",6,0.3924453,0.41968,
+  "log","Model2",7,0.4627647,0.46378,
+  "log","Model2",8,0.5449209,0.53849,
+  "log","Model2",9,0.6505642,0.66000,
+  "log","Model2",10,0.8191031,0.76423,
+
+  # Model 3
+  "log","Model3",1,0.1244730,0.10854,
+  "log","Model3",2,0.1798480,0.21069,
+  "log","Model3",3,0.2272965,0.21318,
+  "log","Model3",4,0.2753521,0.28608,
+  "log","Model3",5,0.3310421,0.30348,
+  "log","Model3",6,0.3926385,0.42141,
+  "log","Model3",7,0.4634766,0.45667,
+  "log","Model3",8,0.5453182,0.55239,
+  "log","Model3",9,0.6519785,0.64993,
+  "log","Model3",10,0.8196932,0.75795,
+
+  # Model 4
+  "log","Model4",1,0.1247022,0.10724,
+  "log","Model4",2,0.1801624,0.21771,
+  "log","Model4",3,0.2271727,0.20277,
+  "log","Model4",4,0.2753760,0.29137,
+  "log","Model4",5,0.3309102,0.29500,
+  "log","Model4",6,0.3924362,0.42397,
+  "log","Model4",7,0.4626898,0.45770,
+  "log","Model4",8,0.5447232,0.55175,
+  "log","Model4",9,0.6513480,0.65206,
+  "log","Model4",10,0.8198827,0.75285
+)
+
+
+# Setting factor levels and labels 
+calib_all <- calib_all %>%
+  mutate(
+    model = factor(model,
+                   levels = c("Model1","Model2","Model3","Model4"),
+                   labels = c("Model 1","Model 2","Model 3","Model 4")),
+    group = recode(group,
+                   orig = "Original CHARGE-AF",
+                   log  = "Log-transformed CHARGE-AF",
+                   af5  = "5-year AF risk")
+  )
+
+
+```
+
+
+```{r Figure 1 }
+
+library(plotly)
+df <- calib_all %>% filter(group == "Log-transformed CHARGE-AF")
+model_names <- unique(df$model)
+
+# Start plot
+p <- plot_ly()
+
+# Add traces for each model
+for(i in seq_along(model_names)) {
+  m <- model_names[i]
+  df_model <- df %>% filter(model == m)
+  p <- add_trace(
+    p,
+    x = df_model$mphat,
+    y = df_model$km,
+    type = 'scatter',
+    mode = 'lines+markers',
+    name = m,
+    text = paste('Decile:', df_model$decile,
+                 '<br>Predicted:', round(df_model$mphat,3),
+                 '<br>Observed:', round(df_model$km,3)),
+    hoverinfo = 'text',
+    visible = TRUE
+  )
+}
+
+# Add perfect calibration line (always visible)
+p <- add_trace(
+  p,
+  x = c(0, max(df$mphat, df$km)),
+  y = c(0, max(df$mphat, df$km)),
+  type = 'scatter',
+  mode = 'lines',
+  line = list(dash = 'dash', color = 'black'),
+  name = 'Perfect calibration',
+  hoverinfo = 'none',
+  visible = TRUE
+)
+
+# Indices of traces for toggling (1:length(models))
+trace_indices <- seq_along(model_names)
+
+# Create buttons for dropdown (one per model)
+buttons <- lapply(trace_indices, function(i) {
+  vis <- rep(FALSE, length(model_names) + 1) # +1 for perfect line
+  vis[i] <- TRUE  # model trace visible
+  vis[length(vis)] <- TRUE  # perfect line always visible
+  list(
+    method = "restyle",
+    args = list("visible", vis),
+    label = model_names[i]
+  )
+})
+
+# Layout with dropdown menu
+p <- layout(
+  p,
+  title = "Calibration of Predicted vs. Observed AF Risk (20-Year)",
+  xaxis = list(title = "Predicted atrial fibrillation risk (%)"),
+  yaxis = list(title = "Observed atrial fibrillation risk (%)"),
+  updatemenus = list(
+    list(
+      type = "dropdown",
+      x = 1.1,
+      y = 1,
+      active = 0,
+      buttons = buttons
+    )
+  ),
+  legend = list(title = list(text = "<b>Model</b>"))
+)
+
+p
+
+
+
+```
+
+
+We can see that for all models, the predicted risk matches up well with the observed AF incidence - suggesting that **CHARGE-AF is a strong metric for predicting long term AF.**
+
+**Real-world impact:** CHARGE-AF is an effective clinical tool for predicting long-term atrial fibrillation (AF) risk. This enables high-risk individuals to be identified early and initiate preventative treatment and lifestyle changes.
+
+Column 
+----------------------------
+
+CHARGE-AF is a tool developed to predict atrial fibrillation from data collected from one clinic visit. **But does CHARGE-AF have a differential risk implications based on sex?**
+
+```{r Creating dataset for Figure 2}
+
+# Creating a dataset with all my study hazard ratios
+hr_data <- tribble(
+  ~Sex,   ~Predictor,         ~Model, ~HR,    ~LowerCI, ~UpperCI, ~pvalue,
+  # Female
+  "Female", "CHARGE-AF score at visit 4",  "Model 1", 1.205, 1.188, 1.223, 0.00001,
+  "Female", "CHARGE-AF score at visit 4",  "Model 2", 1.154, 1.112, 1.198, 0.00001,
+  "Female", "CHARGE-AF score at visit 3",  "Model 2", 1.073, 1.018, 1.132, 0.0088,
+  "Female", "CHARGE-AF score at visit 4",  "Model 3", 1.141, 1.095, 1.189, 0.00001,
+  "Female", "CHARGE-AF score at visit 3",  "Model 3", 1.039, 0.968, 1.115, 0.2897,
+  "Female", "CHARGE-AF score at visit 2",  "Model 3", 1.093, 0.964, 1.240, 0.1648,
+  "Female", "CHARGE-AF score at visit 4",  "Model 4", 1.142, 1.096, 1.190, 0.00001,
+  "Female", "CHARGE-AF score at visit 3",  "Model 4", 1.042, 0.969, 1.120, 0.2710,
+  "Female", "CHARGE-AF score at visit 2",  "Model 4", 1.082, 0.975, 1.200, 0.1368,
+  "Female", "CHARGE-AF score at visit 1",  "Model 4", 0.976, 0.829, 1.150, 0.7745,
+  # Male
+  "Male", "CHARGE-AF score at visit 4",  "Model 1", 1.122, 1.112, 1.131, 0.00001,
+  "Male", "CHARGE-AF score at visit 4",  "Model 2", 1.068, 1.044, 1.093, 0.00001,
+  "Male", "CHARGE-AF score at visit 3",  "Model 2", 1.094, 1.055, 1.133, 0.00001,
+  "Male", "CHARGE-AF score at visit 4",  "Model 3", 1.068, 1.044, 1.093, 0.00001,
+  "Male", "CHARGE-AF score at visit 3",  "Model 3", 1.052, 1.004, 1.103, 0.0351,
+  "Male", "CHARGE-AF score at visit 2",  "Model 3", 1.084, 1.020, 1.152, 0.0091,
+  "Male", "CHARGE-AF score at visit 4",  "Model 4", 1.059, 1.034, 1.085, 0.00001,
+  "Male", "CHARGE-AF score at visit 3",  "Model 4", 1.050, 1.001, 1.102, 0.0460,
+  "Male", "CHARGE-AF score at visit 2",  "Model 4", 1.073, 0.989, 1.163, 0.0913,
+  "Male", "CHARGE-AF score at visit 1",  "Model 4", 1.021, 0.923, 1.130, 0.6889
+)
+
+# Let's order the factors for plotting 
+hr_data <- hr_data %>%
+  mutate(
+    Sex = factor(Sex, levels = c("Female", "Male")),
+    Model = factor(Model, levels = c("Model 1","Model 2","Model 3","Model 4"))
+  )
+    
+
+```
+
+```{r Figure 2}
+
+# Filtering for Visit 4 only -- this is the most important risk score
+visit4_data <- hr_data %>%
+  filter(Predictor == "CHARGE-AF score at visit 4")
+
+# Ensuring the my models are ordered correctly
+visit4_data <- visit4_data %>%
+  mutate(Model = factor(Model, levels = c("Model 1","Model 2","Model 3","Model 4")))
+
+# Creating the plot
+p <- plot_ly()
+
+# Adding a trace for each sex to enable comparisons
+for(s in levels(visit4_data$Sex)) {
+  df_sex <- visit4_data %>% filter(Sex == s)
+  p <- p %>%
+    add_trace(
+      data = df_sex,
+      x = ~Model,
+      y = ~HR,
+      type = 'scatter',
+      mode = 'markers',
+      marker = list(size = 10),
+      error_y = list(
+        type = "data",
+        array = ~UpperCI - HR,
+        arrayminus = ~HR - LowerCI,
+        visible = TRUE
+      ),
+      name = s,
+      text = ~paste("Sex:", Sex,
+                    "<br>Model:", Model,
+                    "<br>HR:", sprintf("%.3f", HR),
+                    "<br>95% CI:", sprintf("%.3f", LowerCI), "-", sprintf("%.3f", UpperCI)),
+      hoverinfo = "text"
+    )
+}
+
+# Adding HR = 1 (i.e., no effect) as the reference line 
+p <- p %>%
+  add_lines(
+    x = levels(visit4_data$Model),
+    y = rep(1, length(levels(visit4_data$Model))),
+    line = list(dash = 'dash', color = 'gray50'),
+    name = 'HR = 1',
+    hoverinfo = 'none'
+  )
+
+# Adding a dropdown menu to filter by sex 
+p <- p %>%
+  layout(
+    title = "Hazard Ratios for Atrial Fibrillation by Model",
+    yaxis = list(title = "Hazard Ratio (95% CI)"),
+    xaxis = list(title = "Model"),
+    updatemenus = list(
+      list(
+        type = "dropdown",
+        x = 0, y = 1.2,
+        buttons = list(
+          list(method = "restyle",
+               args = list("visible", c(TRUE, FALSE, TRUE)), # Female only + HR=1
+               label = "Females"),
+          list(method = "restyle",
+               args = list("visible", c(FALSE, TRUE, TRUE)), # Male only + HR=1
+               label = "Males"),
+          list(method = "restyle",
+               args = list("visible", c(TRUE, TRUE, TRUE)),  # Both + HR=1
+               label = "Both")
+        )
+      )
+    )
+  )
+
+p
+
+
+```
+
+An increase in CHARGE-AF risk score results in a **larger increase in AF risk among females than among males.**
+
+ 
+
+# Model Interpretation
+
+Models 1 through 4 are Cox regression models that use CHARGE-AF scores to predict incident AF. Model 4 includes only one (baseline) CHARGE-AF risk score, while each subsequent model incorporates an additional (prior) risk score. The calibration and hazard ratios produced by all models are very similar – suggesting that **one risk score alone is sufficient to ascertain AF risk.** Incorporating prior risk score does not contribute additional meaningful information. 
+
+
+# Data Description 
+
+Data is taken from the ARIC study, which followed a cohort of 15,792 adults beginning in 1987. Participants of ages 45 to 64 were recruited from four U.S communities: Forsyth County, North Carolina; Jackson, Mississippi; suburban Minneapolis, Minnesota; and Washington County, Maryland. My final analytic sample (N=10,188) includes participants with **complete measurements from visits 1 through 4** of the ARIC study (Visit 1: 1987–89; Visit 2: 1990–92; Visit 3: 1993–95; Visit 4: 1996–98). Data collection includes measurements obtained during clinic visits and through telephone interviews. Participants were **excluded if they had prevalent AF detected at or before visit 4.** 
+
+
