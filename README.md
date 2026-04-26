@@ -1,7 +1,7 @@
 # Project Description 
 
 ## The Data Dashboard 
-* My dashboard (`Final_dashboard_code.html`) is divided into three tabs
+* My dashboard (`index.html`) is divided into three tabs
   * Interactive visualization - The main page, which contains the visualizations along with key takeaways
   * Model interpretation - Provides details for users who want to learn more about how I analyzed my data
   * Data description - Details on the data source as well as inclusion and exclusion criteria for my study 
