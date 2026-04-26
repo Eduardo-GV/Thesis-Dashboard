@@ -187,7 +187,7 @@ We can see that for all models, the predicted risk matches up well with the obse
 Column 
 ----------------------------
 
-CHARGE-AF is a tool developed to predict atrial fibrillation from data collected from one clinic visit. **But does CHARGE-AF have a differential risk implications based on sex?**
+CHARGE-AF is a tool developed to predict atrial fibrillation from data collected at one clinic visit. But **does CHARGE-AF have a differential risk implications based on sex?**
 
 ```{r Creating dataset for Figure 2}
 
@@ -310,14 +310,16 @@ p
 An increase in CHARGE-AF risk score results in a **larger increase in AF risk among females than among males.**
 
  
+Please visit following link to access the GitHub repository for this project: https://github.com/Eduardo-GV/Thesis-Dashboard/tree/main
+
 
 # Model Interpretation
 
-Models 1 through 4 are Cox regression models that use CHARGE-AF scores to predict incident AF. Model 4 includes only one (baseline) CHARGE-AF risk score, while each subsequent model incorporates an additional (prior) risk score. The calibration and hazard ratios produced by all models are very similar – suggesting that **one risk score alone is sufficient to ascertain AF risk.** Incorporating prior risk score does not contribute additional meaningful information. 
+Models 1 through 4 are Cox regression models that use CHARGE-AF scores to predict incident AF. Model 4 includes only one (baseline) CHARGE-AF risk score, while each subsequent model incorporates an additional (prior) risk score. The calibration and hazard ratios produced by all models are very similar – suggesting that **one risk score alone is sufficient to ascertain AF risk.** Incorporating prior risk scores does not contribute additional meaningful information. 
 
 
 # Data Description 
 
-Data is taken from the ARIC study, which followed a cohort of 15,792 adults beginning in 1987. Participants of ages 45 to 64 were recruited from four U.S communities: Forsyth County, North Carolina; Jackson, Mississippi; suburban Minneapolis, Minnesota; and Washington County, Maryland. My final analytic sample (N=10,188) includes participants with **complete measurements from visits 1 through 4** of the ARIC study (Visit 1: 1987–89; Visit 2: 1990–92; Visit 3: 1993–95; Visit 4: 1996–98). Data collection includes measurements obtained during clinic visits and through telephone interviews. Participants were **excluded if they had prevalent AF detected at or before visit 4.** 
+Data (not publicly-available) is taken from the ARIC study, which followed a cohort of 15,792 adults beginning in 1987. Participants of ages 45 to 64 were recruited from four U.S communities: Forsyth County, North Carolina; Jackson, Mississippi; suburban Minneapolis, Minnesota; and Washington County, Maryland. My final analytic sample (N=10,188) includes participants with **complete measurements from visits 1 through 4** of the ARIC study (Visit 1: 1987–89; Visit 2: 1990–92; Visit 3: 1993–95; Visit 4: 1996–98). Data collection includes measurements obtained during clinic visits and through telephone interviews. Participants were **excluded if they had prevalent AF detected at or before visit 4.** 
 
 
