@@ -15,4 +15,8 @@
   * **Hover boxes** that provide specific values when moving over individual points in my graph
   * **Menu bars** to see different models or groups appear on my graph
   
-  
+
+
+## Real-World Impact
+CHARGE-AF is an effective clinical tool for predicting long-term atrial fibrillation (AF) risk. This enables
+high-risk individuals to be identified early and initiate preventative treatment and lifestyle changes. 
